@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Media;
+using NAudio.Wave;
 
 namespace ñeñePlayer
 {
@@ -24,7 +25,7 @@ namespace ñeñePlayer
 
         private NAudio.Wave.BlockAlignReductionStream stream = null;
         private NAudio.Wave.DirectSoundOut output = null;
-
+        bool isPlaying;
         private void fileToolStripMenuItem_Click(object sender, EventArgs e)
         {
 
@@ -42,17 +43,43 @@ namespace ñeñePlayer
         }
         private void setSongs(List<Song> songsToSet)
         {
-            Button b1 = songsToSet[0].setSong();
-            this.Controls.Add(b1);
-            b1.Click += new EventHandler(this.setButtons);
+            
+            for (int i = 0; i < songsToSet.Count; i++)
+            {
+                Button btn = songsToSet[i].setSong();
+                this.Controls.Add(btn);
+                btn.Click += new EventHandler(this.setButtons);
+                Song.size.X += 40;
+            }
+
         }
         private void setButtons(object sender, EventArgs e)
         {
-            NAudio.Wave.WaveStream pcm = NAudio.Wave.WaveFormatConversionStream.CreatePcmStream(new NAudio.Wave.Mp3FileReader(songsAdded[0].path));
-            stream = new NAudio.Wave.BlockAlignReductionStream(pcm);
-            output = new NAudio.Wave.DirectSoundOut();
+            if (isPlaying == true) 
+            {
+                output.Stop();
+            }
+            string s = (sender as Button).Text;
+            WaveStream pcm = WaveFormatConversionStream.CreatePcmStream(new Mp3FileReader(songsAdded[findClickedSong(s)].path));
+            stream = new BlockAlignReductionStream(pcm);
+            output = new DirectSoundOut();
             output.Init(stream);
             output.Play();
+            if (!isPlaying)
+            {
+                isPlaying = true;
+            }
+        } 
+        private int findClickedSong(string txt)
+        {
+            foreach (Song song in songsAdded)
+            {
+                if(song.title == txt)
+                {
+                    return (song.thisSongNumber);
+                }
+            }
+            return (0);
         }
         private void createSongs(List<string> songsToCreate)
         {
@@ -78,13 +105,9 @@ namespace ñeñePlayer
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            try
+            if (output != null) 
             {
                 output.Stop();
-            }
-            catch
-            {
-                this.Close();
             }
         }
     }
